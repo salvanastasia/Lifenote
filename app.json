@@ -32,7 +32,8 @@
             "./assets/fonts/Handlee-Regular.ttf"
           ]
         }
-      ]
+      ],
+      "expo-asset"
     ]
   }
 }
