@@ -52,7 +52,7 @@ Every animation, timing, and easing curve - perfectly recreated.
 
 ### Step 2: Start Dev Server
 ```bash
-npm start
+npx expo start
 ```
 
 ### Step 3: Scan QR Code
@@ -285,7 +285,7 @@ You now have:
 **Run this command:**
 
 ```bash
-npm start
+npx expo start
 ```
 
 **Then scan the QR code with Expo Go!**
