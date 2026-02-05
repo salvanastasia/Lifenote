@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, Image, StyleSheet } from 'react-native';
+import Animated, { useSharedValue, useAnimatedStyle, withTiming, Easing } from 'react-native-reanimated';
 import { Note } from './types';
 
 interface CalendarViewProps {
@@ -49,6 +50,20 @@ function DayThumbnail({ note, onClick }: DayThumbnailProps) {
 }
 
 export default function CalendarView({ notes, currentDay, onDayClick }: CalendarViewProps) {
+  // Fade in animation
+  const opacity = useSharedValue(0);
+
+  useEffect(() => {
+    opacity.value = withTiming(1, { 
+      duration: 600, 
+      easing: Easing.bezier(0.4, 0, 0.2, 1) 
+    });
+  }, []);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    opacity: opacity.value,
+  }));
+
   // Calculate total days in current year
   const currentYear = new Date().getFullYear();
   const isLeapYear = (currentYear % 4 === 0 && currentYear % 100 !== 0) || (currentYear % 400 === 0);
@@ -62,7 +77,7 @@ export default function CalendarView({ notes, currentDay, onDayClick }: Calendar
   };
 
   return (
-    <View style={styles.container}>
+    <Animated.View style={[styles.container, animatedStyle]}>
       <Text style={styles.title}>
         LifeNote · Day {currentDay}
       </Text>
@@ -100,7 +115,7 @@ export default function CalendarView({ notes, currentDay, onDayClick }: Calendar
       
       {/* Gradient fade at bottom */}
       <View style={styles.gradientFade} />
-    </View>
+    </Animated.View>
   );
 }
 

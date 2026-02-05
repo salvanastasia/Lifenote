@@ -62,12 +62,14 @@ export default function NewNoteView({ currentDay, onSave, onCancel }: NewNoteVie
   const shadowScale = useSharedValue(1);
   const shadowRotate = useSharedValue(-1.8);
   const shadowOpacity = useSharedValue(0);
+  const shadowBorderRadius = useSharedValue(32);
 
   const photoLeft = useSharedValue(23.62);
   const photoTop = useSharedValue(172.92);
   const photoScale = useSharedValue(1);
   const photoRotate = useSharedValue(4.94);
   const photoOpacity = useSharedValue(0);
+  const photoBorderRadius = useSharedValue(32);
 
   const cardBottom = useSharedValue(-200);
   const cardOpacity = useSharedValue(0);
@@ -137,11 +139,28 @@ export default function NewNoteView({ currentDay, onSave, onCancel }: NewNoteVie
     if (image || description) {
       setIsSaving(true);
 
-      // Animate out
+      // Calculate final position in calendar grid
+      const cols = 7;
+      const rowIndex = Math.floor((currentDay - 1) / cols);
+      const colIndex = (currentDay - 1) % cols;
+      
+      // Calendar layout: 7 columns, 16px gap, centered
+      const thumbnailWidth = 32;
+      const thumbnailHeight = 35;
+      const gap = 16;
+      const gridWidth = cols * thumbnailWidth + (cols - 1) * gap;
+      const gridStartX = (SCREEN_WIDTH - gridWidth) / 2;
+      
+      // Calculate the actual position on screen
+      // The grid starts at marginTop: 142, with rows spaced by (thumbnailHeight + gap)
+      const finalLeft = gridStartX + colIndex * (thumbnailWidth + gap);
+      const finalTop = 142 + rowIndex * (thumbnailHeight + gap);
+      
+      // Step 1: Animate title out
       titleOpacity.value = withTiming(0, { duration: 600, easing: Easing.bezier(0.4, 0, 0.2, 1) });
       titleBlur.value = withTiming(10, { duration: 600, easing: Easing.bezier(0.4, 0, 0.2, 1) });
 
-      // Animate photos to center with spring
+      // Step 2: Animate photos to center with spring
       shadowLeft.value = withTiming(SCREEN_WIDTH / 2 - 159.887, { 
         duration: 800, 
         easing: Easing.bezier(0.34, 1.56, 0.64, 1) 
@@ -176,14 +195,88 @@ export default function NewNoteView({ currentDay, onSave, onCancel }: NewNoteVie
         easing: Easing.bezier(0.34, 1.56, 0.64, 1) 
       });
 
-      // Animate card out
+      // Step 3: Animate card out
       cardBottom.value = withTiming(50, { duration: 500, easing: Easing.bezier(0.4, 0, 0.2, 1) });
       cardTranslateY.value = withTiming(100, { duration: 500, easing: Easing.bezier(0.4, 0, 0.2, 1) });
       cardOpacity.value = withTiming(0, { duration: 500, easing: Easing.bezier(0.4, 0, 0.2, 1) });
 
+      // Step 4: After center animation, move to final calendar position
       setTimeout(() => {
-        onSave({ image, description });
-      }, 2000);
+        // Calculate scale factor: from current frame size to thumbnail size
+        const currentPhotoWidth = 319;
+        const currentPhotoHeight = 348;
+        const scaleX = thumbnailWidth / currentPhotoWidth;
+        const scaleY = thumbnailHeight / currentPhotoHeight;
+        const finalScale = Math.min(scaleX, scaleY);
+        
+        // The containers have the frame centered inside them
+        // Shadow container: 329.774 x 357.848, Photo container: 347.765 x 374.162
+        // After scaling, we need to position the container so the scaled frame appears at finalLeft, finalTop
+        const shadowContainerWidth = 329.774;
+        const shadowContainerHeight = 357.848;
+        const photoContainerWidth = 347.765;
+        const photoContainerHeight = 374.162;
+        
+        // Calculate where the top-left of the container should be
+        // so that the centered, scaled frame appears at the thumbnail position
+        const scaledFrameWidth = currentPhotoWidth * finalScale;
+        const scaledFrameHeight = currentPhotoHeight * finalScale;
+        
+        // Container positions (accounting for centered content and desired frame position)
+        const shadowTargetLeft = finalLeft - (shadowContainerWidth - scaledFrameWidth) / 2;
+        const shadowTargetTop = finalTop - (shadowContainerHeight - scaledFrameHeight) / 2;
+        
+        const photoTargetLeft = finalLeft - (photoContainerWidth - scaledFrameWidth) / 2;
+        const photoTargetTop = finalTop - (photoContainerHeight - scaledFrameHeight) / 2;
+
+        // Animate to calendar position
+        shadowLeft.value = withTiming(shadowTargetLeft, { 
+          duration: 1200, 
+          easing: Easing.bezier(0.4, 0, 0.2, 1) 
+        });
+        shadowTop.value = withTiming(shadowTargetTop, { 
+          duration: 1200, 
+          easing: Easing.bezier(0.4, 0, 0.2, 1) 
+        });
+        shadowScale.value = withTiming(finalScale, { 
+          duration: 1200, 
+          easing: Easing.bezier(0.4, 0, 0.2, 1) 
+        });
+        shadowRotate.value = withTiming(-2, { 
+          duration: 1200, 
+          easing: Easing.bezier(0.4, 0, 0.2, 1) 
+        });
+        shadowBorderRadius.value = withTiming(10, { 
+          duration: 1200, 
+          easing: Easing.bezier(0.4, 0, 0.2, 1) 
+        });
+
+        photoLeft.value = withTiming(photoTargetLeft, { 
+          duration: 1200, 
+          easing: Easing.bezier(0.4, 0, 0.2, 1) 
+        });
+        photoTop.value = withTiming(photoTargetTop, { 
+          duration: 1200, 
+          easing: Easing.bezier(0.4, 0, 0.2, 1) 
+        });
+        photoScale.value = withTiming(finalScale, { 
+          duration: 1200, 
+          easing: Easing.bezier(0.4, 0, 0.2, 1) 
+        }, (finished) => {
+          // After movement animation completes, immediately transition to calendar
+          if (finished) {
+            runOnJS(onSave)({ image, description });
+          }
+        });
+        photoRotate.value = withTiming(3, { 
+          duration: 1200, 
+          easing: Easing.bezier(0.4, 0, 0.2, 1) 
+        });
+        photoBorderRadius.value = withTiming(10, { 
+          duration: 1200, 
+          easing: Easing.bezier(0.4, 0, 0.2, 1) 
+        });
+      }, 1000); // Start moving to calendar position 1s after center animation starts
     }
   };
 
@@ -224,6 +317,14 @@ export default function NewNoteView({ currentDay, onSave, onCancel }: NewNoteVie
     opacity: textOpacity.value,
   }));
 
+  const shadowBoxAnimatedStyle = useAnimatedStyle(() => ({
+    borderRadius: shadowBorderRadius.value,
+  }));
+
+  const photoFrameAnimatedStyle = useAnimatedStyle(() => ({
+    borderRadius: photoBorderRadius.value,
+  }));
+
   const panGesture = Gesture.Pan()
     .onChange((event) => {
       // Make the card follow the finger during drag
@@ -261,25 +362,27 @@ export default function NewNoteView({ currentDay, onSave, onCancel }: NewNoteVie
 
       {/* Photo frame background shadow */}
       <Animated.View style={[styles.shadowContainer, shadowAnimatedStyle]}>
-        <View style={styles.shadowBox} />
+        <Animated.View style={[styles.shadowBox, shadowBoxAnimatedStyle]} />
       </Animated.View>
 
       {/* Photo frame with upload */}
       <Animated.View style={[styles.photoContainer, photoAnimatedStyle]}>
-        <TouchableOpacity 
-          style={styles.photoFrame}
-          onPress={handleImageUpload}
-          disabled={isSaving}
-          activeOpacity={0.9}
-        >
-          {image ? (
-            <Image source={{ uri: image }} style={styles.uploadedImage} />
-          ) : (
-            <View style={styles.uploadPlaceholder}>
-              <Text style={styles.uploadText}>Tap to add photo</Text>
-            </View>
-          )}
-        </TouchableOpacity>
+        <Animated.View style={[styles.photoFrame, photoFrameAnimatedStyle]}>
+          <TouchableOpacity 
+            style={styles.photoFrameButton}
+            onPress={handleImageUpload}
+            disabled={isSaving}
+            activeOpacity={0.9}
+          >
+            {image ? (
+              <Image source={{ uri: image }} style={styles.uploadedImage} />
+            ) : (
+              <View style={styles.uploadPlaceholder}>
+                <Text style={styles.uploadText}>Tap to add photo</Text>
+              </View>
+            )}
+          </TouchableOpacity>
+        </Animated.View>
       </Animated.View>
 
       {/* Note input card */}
@@ -367,7 +470,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#e6dfd6',
     height: 348,
     width: 319,
-    borderRadius: 32,
   },
   photoContainer: {
     position: 'absolute',
@@ -383,13 +485,18 @@ const styles = StyleSheet.create({
     borderColor: '#f8f7f4',
     height: 348,
     width: 319,
-    borderRadius: 32,
     overflow: 'hidden',
     shadowColor: '#000',
     shadowOffset: { width: -2, height: -2 },
     shadowOpacity: 0.12,
     shadowRadius: 20,
     elevation: 5,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  photoFrameButton: {
+    width: '100%',
+    height: '100%',
     alignItems: 'center',
     justifyContent: 'center',
   },
