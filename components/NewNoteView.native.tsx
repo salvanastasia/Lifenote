@@ -72,6 +72,7 @@ export default function NewNoteView({ currentDay, onSave, onCancel }: NewNoteVie
   const cardBottom = useSharedValue(-200);
   const cardOpacity = useSharedValue(0);
   const cardTranslateY = useSharedValue(100);
+  const dragTranslateY = useSharedValue(0);
 
   const textOpacity = useSharedValue(0);
   const textBlur = useSharedValue(10);
@@ -213,7 +214,9 @@ export default function NewNoteView({ currentDay, onSave, onCancel }: NewNoteVie
 
   const cardAnimatedStyle = useAnimatedStyle(() => ({
     bottom: isExpanded ? 50 : cardBottom.value,
-    transform: [{ translateY: cardTranslateY.value }],
+    transform: [
+      { translateY: cardTranslateY.value + dragTranslateY.value }
+    ],
     opacity: cardOpacity.value,
   }));
 
@@ -222,11 +225,30 @@ export default function NewNoteView({ currentDay, onSave, onCancel }: NewNoteVie
   }));
 
   const panGesture = Gesture.Pan()
+    .onChange((event) => {
+      // Make the card follow the finger during drag
+      dragTranslateY.value = event.translationY;
+    })
     .onEnd((event) => {
+      // Smooth spring animation back to position
       if (event.translationY > 150) {
+        dragTranslateY.value = withTiming(0, { 
+          duration: 300, 
+          easing: Easing.bezier(0.25, 0.1, 0.25, 1) 
+        });
         runOnJS(setIsExpanded)(false);
       } else if (event.translationY < -50) {
+        dragTranslateY.value = withTiming(0, { 
+          duration: 300, 
+          easing: Easing.bezier(0.25, 0.1, 0.25, 1) 
+        });
         runOnJS(setIsExpanded)(true);
+      } else {
+        // Spring back to original position
+        dragTranslateY.value = withTiming(0, { 
+          duration: 300, 
+          easing: Easing.bezier(0.25, 0.1, 0.25, 1) 
+        });
       }
     });
 
@@ -270,21 +292,20 @@ export default function NewNoteView({ currentDay, onSave, onCancel }: NewNoteVie
           >
             <Animated.View style={[styles.cardContent, textAnimatedStyle]}>
               <Text style={styles.cardTitle}>Add a note to your memory</Text>
-            </Animated.View>
-
-            <LinesSVG />
-
-            <Animated.View style={[styles.textAreaContainer, textAnimatedStyle]}>
-              <TextInput
-                value={description}
-                onChangeText={setDescription}
-                placeholder="What happened today?"
-                placeholderTextColor="rgba(90, 74, 53, 0.3)"
-                multiline
-                style={styles.textArea}
-                editable={!isSaving}
-                onFocus={() => setIsExpanded(true)}
-              />
+              
+              <View style={styles.linesContainer}>
+                <LinesSVG />
+                <TextInput
+                  value={description}
+                  onChangeText={setDescription}
+                  placeholder="What happened today?"
+                  placeholderTextColor="rgba(90, 74, 53, 0.3)"
+                  multiline
+                  style={styles.textArea}
+                  editable={!isSaving}
+                  onFocus={() => setIsExpanded(true)}
+                />
+              </View>
             </Animated.View>
 
             {/* Action buttons */}
@@ -412,22 +433,26 @@ const styles = StyleSheet.create({
     fontFamily: 'DMMono-Regular',
     fontSize: 14,
     color: '#2f1f0a',
+    marginBottom: 24,
   },
-  textAreaContainer: {
-    position: 'absolute',
-    top: 85.85,
-    left: 29.66,
-    width: 309.579,
-    height: 280.639,
+  linesContainer: {
+    position: 'relative',
+    width: '100%',
+    height: 244.476,
   },
   textArea: {
     fontFamily: 'Handlee-Regular',
     fontSize: 14,
     color: '#5a4a35',
-    width: 309,
-    height: 280,
-    lineHeight: 39.76,
+    position: 'absolute',
+    top: -12,
+    left: 0,
+    right: 0,
+    height: '100%',
+    lineHeight: 40.64,
     textAlignVertical: 'top',
+    paddingTop: 0,
+    includeFontPadding: false,
   },
   buttonContainer: {
     flexDirection: 'row',

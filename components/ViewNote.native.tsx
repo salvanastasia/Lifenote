@@ -58,6 +58,7 @@ export default function ViewNote({ note, onBack, isEditable = false, onUpdate }:
   const photoScale = useSharedValue(1);
   const photoRotate = useSharedValue(4.94);
   const cardBottom = useSharedValue(-200);
+  const dragTranslateY = useSharedValue(0);
 
   // Start floating animation
   React.useEffect(() => {
@@ -139,14 +140,36 @@ export default function ViewNote({ note, onBack, isEditable = false, onUpdate }:
 
   const cardAnimatedStyle = useAnimatedStyle(() => ({
     bottom: isExpanded ? 50 : cardBottom.value,
+    transform: [
+      { translateY: dragTranslateY.value }
+    ],
   }));
 
   const panGesture = Gesture.Pan()
+    .onChange((event) => {
+      // Make the card follow the finger during drag
+      dragTranslateY.value = event.translationY;
+    })
     .onEnd((event) => {
+      // Smooth spring animation back to position
       if (event.translationY > 150) {
+        dragTranslateY.value = withTiming(0, { 
+          duration: 300, 
+          easing: Easing.bezier(0.25, 0.1, 0.25, 1) 
+        });
         runOnJS(setIsExpanded)(false);
       } else if (event.translationY < -50) {
+        dragTranslateY.value = withTiming(0, { 
+          duration: 300, 
+          easing: Easing.bezier(0.25, 0.1, 0.25, 1) 
+        });
         runOnJS(setIsExpanded)(true);
+      } else {
+        // Spring back to original position
+        dragTranslateY.value = withTiming(0, { 
+          duration: 300, 
+          easing: Easing.bezier(0.25, 0.1, 0.25, 1) 
+        });
       }
     });
 
@@ -193,24 +216,23 @@ export default function ViewNote({ note, onBack, isEditable = false, onUpdate }:
           >
             <View style={styles.cardContent}>
               <Text style={styles.cardTitle}>Your note :)</Text>
-            </View>
-
-            <LinesSVG />
-
-            <View style={styles.textAreaContainer}>
-              {isEditing ? (
-                <TextInput
-                  value={description}
-                  onChangeText={setDescription}
-                  placeholder="What happened today?"
-                  placeholderTextColor="rgba(90, 74, 53, 0.3)"
-                  multiline
-                  style={styles.textArea}
-                  onFocus={() => setIsExpanded(true)}
-                />
-              ) : (
-                <Text style={styles.textAreaReadOnly}>{description}</Text>
-              )}
+              
+              <View style={styles.linesContainer}>
+                <LinesSVG />
+                {isEditing ? (
+                  <TextInput
+                    value={description}
+                    onChangeText={setDescription}
+                    placeholder="What happened today?"
+                    placeholderTextColor="rgba(90, 74, 53, 0.3)"
+                    multiline
+                    style={styles.textArea}
+                    onFocus={() => setIsExpanded(true)}
+                  />
+                ) : (
+                  <Text style={styles.textAreaReadOnly}>{description}</Text>
+                )}
+              </View>
             </View>
 
             {/* Action buttons - show when editable */}
@@ -358,29 +380,37 @@ const styles = StyleSheet.create({
     fontFamily: 'DMMono-Regular',
     fontSize: 14,
     color: '#2f1f0a',
+    marginBottom: 24,
   },
-  textAreaContainer: {
-    position: 'absolute',
-    top: 85.85,
-    left: 29.66,
-    width: 309.579,
-    height: 280.639,
+  linesContainer: {
+    position: 'relative',
+    width: '100%',
+    height: 244.476,
   },
   textArea: {
     fontFamily: 'Handlee-Regular',
     fontSize: 14,
     color: '#5a4a35',
-    width: 309,
-    height: 280,
-    lineHeight: 39.76,
+    position: 'absolute',
+    top: -12,
+    left: 0,
+    right: 0,
+    height: '100%',
+    lineHeight: 40.64,
     textAlignVertical: 'top',
+    paddingTop: 0,
+    includeFontPadding: false,
   },
   textAreaReadOnly: {
     fontFamily: 'Handlee-Regular',
     fontSize: 14,
     color: '#5a4a35',
-    width: 309,
-    lineHeight: 39.76,
+    position: 'absolute',
+    top: -12,
+    left: 0,
+    right: 0,
+    lineHeight: 40.64,
+    includeFontPadding: false,
   },
   buttonContainer: {
     flexDirection: 'row',
