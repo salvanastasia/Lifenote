@@ -1,0 +1,2 @@
+This is a placeholder file. Replace with actual icon.png (1024x1024)
+For now, Expo will use the default icon.

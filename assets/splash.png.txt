@@ -1,0 +1,2 @@
+This is a placeholder file. Replace with actual splash.png (1284x2778)
+For now, Expo will use the default splash screen.

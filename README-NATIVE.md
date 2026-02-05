@@ -42,7 +42,7 @@ Or use the default Expo placeholders for now.
 Start the development server:
 
 ```bash
-npm start
+npx expo start
 ```
 
 This will open Expo DevTools. You can then:

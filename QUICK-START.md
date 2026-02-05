@@ -21,7 +21,7 @@ Your React app has been converted to React Native! Follow these steps to get sta
 
 2. **Start the development server:**
    ```bash
-   npm start
+   npx expo start
    ```
 
 3. **Scan the QR code** that appears in your terminal with:
