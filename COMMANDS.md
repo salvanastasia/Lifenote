@@ -4,18 +4,18 @@
 
 ### Start the App
 ```bash
-npm start
+npx expo start
 ```
 Opens Expo DevTools. Scan QR code with Expo Go app.
 
 ### Run on iOS Simulator (Mac Only)
 ```bash
-npm run ios
+npx expo start --ios
 ```
 
 ### Run on Android Emulator
 ```bash
-npm run android
+npx expo start --android
 ```
 
 ### Clear Cache

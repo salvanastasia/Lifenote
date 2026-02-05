@@ -257,7 +257,7 @@ Your app is production-ready and works identically to the web version.
 **Run this command to get started:**
 
 ```bash
-npm start
+npx expo start
 ```
 
 Then scan the QR code and enjoy! 📱✨
