@@ -1,0 +1,39 @@
+{
+  "expo": {
+    "name": "LifeNote",
+    "slug": "lifenote",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "resizeMode": "contain",
+      "backgroundColor": "#f2ede7"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.lifenote.app"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#f2ede7"
+      },
+      "package": "com.lifenote.app"
+    },
+    "web": {},
+    "plugins": [
+      [
+        "expo-font",
+        {
+          "fonts": [
+            "./assets/fonts/DMMono-Regular.ttf",
+            "./assets/fonts/Handlee-Regular.ttf"
+          ]
+        }
+      ],
+      "react-native-reanimated/plugin"
+    ]
+  }
+}
