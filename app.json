@@ -32,8 +32,7 @@
             "./assets/fonts/Handlee-Regular.ttf"
           ]
         }
-      ],
-      "react-native-reanimated/plugin"
+      ]
     ]
   }
 }

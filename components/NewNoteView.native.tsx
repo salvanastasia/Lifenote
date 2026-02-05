@@ -1,0 +1,463 @@
+import React, { useState } from 'react';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Dimensions, Image, Alert } from 'react-native';
+import { Note } from './types';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+  withRepeat,
+  withSequence,
+  Easing,
+  runOnJS,
+} from 'react-native-reanimated';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import * as ImagePicker from 'expo-image-picker';
+import Svg, { Line, G } from 'react-native-svg';
+
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
+
+interface NewNoteViewProps {
+  currentDay: number;
+  onSave: (note: Omit<Note, 'day' | 'date'>) => void;
+  onCancel: () => void;
+}
+
+function LinesSVG() {
+  return (
+    <View style={{ height: 244.476, width: '100%', position: 'relative' }}>
+      <Svg
+        width="100%"
+        height="100%"
+        viewBox="0 0 309.001 245.476"
+        fill="none"
+        preserveAspectRatio="none"
+      >
+        <G>
+          <Line x1="0.00106109" y1="0.499999" x2="309" y2="1.13947" stroke="#A4947F" strokeOpacity="0.3" />
+          <Line x1="0.00106109" y1="41.1395" x2="309" y2="41.7789" stroke="#A4947F" strokeOpacity="0.3" />
+          <Line x1="0.00106109" y1="81.7789" x2="309" y2="82.4184" stroke="#A4947F" strokeOpacity="0.3" />
+          <Line x1="0.00106109" y1="122.418" x2="309" y2="123.058" stroke="#A4947F" strokeOpacity="0.3" />
+          <Line x1="0.00106109" y1="163.058" x2="309" y2="163.697" stroke="#A4947F" strokeOpacity="0.3" />
+          <Line x1="0.00106109" y1="203.697" x2="309" y2="204.337" stroke="#A4947F" strokeOpacity="0.3" />
+          <Line x1="0.00106109" y1="244.337" x2="309" y2="244.976" stroke="#A4947F" strokeOpacity="0.3" />
+        </G>
+      </Svg>
+    </View>
+  );
+}
+
+export default function NewNoteView({ currentDay, onSave, onCancel }: NewNoteViewProps) {
+  const [image, setImage] = useState<string | null>(null);
+  const [description, setDescription] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  // Animation values
+  const titleOpacity = useSharedValue(0);
+  const titleY = useSharedValue(-20);
+  const titleBlur = useSharedValue(10);
+
+  const shadowLeft = useSharedValue(32.61);
+  const shadowTop = useSharedValue(181.08);
+  const shadowScale = useSharedValue(1);
+  const shadowRotate = useSharedValue(-1.8);
+  const shadowOpacity = useSharedValue(0);
+
+  const photoLeft = useSharedValue(23.62);
+  const photoTop = useSharedValue(172.92);
+  const photoScale = useSharedValue(1);
+  const photoRotate = useSharedValue(4.94);
+  const photoOpacity = useSharedValue(0);
+
+  const cardBottom = useSharedValue(-200);
+  const cardOpacity = useSharedValue(0);
+  const cardTranslateY = useSharedValue(100);
+
+  const textOpacity = useSharedValue(0);
+  const textBlur = useSharedValue(10);
+
+  // Start entrance animations
+  React.useEffect(() => {
+    // Title animation
+    titleOpacity.value = withTiming(1, { duration: 600, easing: Easing.bezier(0.4, 0, 0.2, 1) });
+    titleY.value = withTiming(0, { duration: 600, easing: Easing.bezier(0.4, 0, 0.2, 1) });
+    titleBlur.value = withTiming(0, { duration: 600, easing: Easing.bezier(0.4, 0, 0.2, 1) });
+
+    // Shadow animation
+    shadowOpacity.value = withTiming(1, { 
+      duration: 600, 
+      easing: Easing.bezier(0.4, 0, 0.2, 1) 
+    });
+
+    // Photo frame animation
+    photoOpacity.value = withTiming(1, { 
+      duration: 600, 
+      easing: Easing.bezier(0.4, 0, 0.2, 1) 
+    });
+
+    // Card animation with floating effect
+    cardOpacity.value = withTiming(1, { duration: 600, easing: Easing.bezier(0.4, 0, 0.2, 1) });
+    cardTranslateY.value = withTiming(0, { duration: 600, easing: Easing.bezier(0.4, 0, 0.2, 1) });
+    cardBottom.value = withRepeat(
+      withSequence(
+        withTiming(-190, { duration: 2000, easing: Easing.inOut(Easing.ease) }),
+        withTiming(-200, { duration: 2000, easing: Easing.inOut(Easing.ease) })
+      ),
+      -1,
+      false
+    );
+
+    // Text animations
+    setTimeout(() => {
+      textOpacity.value = withTiming(1, { duration: 400, easing: Easing.bezier(0.4, 0, 0.2, 1) });
+      textBlur.value = withTiming(0, { duration: 400, easing: Easing.bezier(0.4, 0, 0.2, 1) });
+    }, 700);
+  }, []);
+
+  const handleImageUpload = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Permission needed', 'Please grant camera roll permissions to add photos.');
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      quality: 0.8,
+    });
+
+    if (!result.canceled && result.assets[0]) {
+      setImage(result.assets[0].uri);
+    }
+  };
+
+  const handleSave = () => {
+    if (image || description) {
+      setIsSaving(true);
+
+      // Animate out
+      titleOpacity.value = withTiming(0, { duration: 600, easing: Easing.bezier(0.4, 0, 0.2, 1) });
+      titleBlur.value = withTiming(10, { duration: 600, easing: Easing.bezier(0.4, 0, 0.2, 1) });
+
+      // Animate photos to center with spring
+      shadowLeft.value = withTiming(SCREEN_WIDTH / 2 - 159.887, { 
+        duration: 800, 
+        easing: Easing.bezier(0.34, 1.56, 0.64, 1) 
+      });
+      shadowTop.value = withTiming(300, { 
+        duration: 800, 
+        easing: Easing.bezier(0.34, 1.56, 0.64, 1) 
+      });
+      shadowScale.value = withTiming(1.1, { 
+        duration: 800, 
+        easing: Easing.bezier(0.34, 1.56, 0.64, 1) 
+      });
+      shadowRotate.value = withTiming(-3.5, { 
+        duration: 800, 
+        easing: Easing.bezier(0.34, 1.56, 0.64, 1) 
+      });
+
+      photoLeft.value = withTiming(SCREEN_WIDTH / 2 - 173.8825, { 
+        duration: 800, 
+        easing: Easing.bezier(0.34, 1.56, 0.64, 1) 
+      });
+      photoTop.value = withTiming(292, { 
+        duration: 800, 
+        easing: Easing.bezier(0.34, 1.56, 0.64, 1) 
+      });
+      photoScale.value = withTiming(1.1, { 
+        duration: 800, 
+        easing: Easing.bezier(0.34, 1.56, 0.64, 1) 
+      });
+      photoRotate.value = withTiming(7, { 
+        duration: 800, 
+        easing: Easing.bezier(0.34, 1.56, 0.64, 1) 
+      });
+
+      // Animate card out
+      cardBottom.value = withTiming(50, { duration: 500, easing: Easing.bezier(0.4, 0, 0.2, 1) });
+      cardTranslateY.value = withTiming(100, { duration: 500, easing: Easing.bezier(0.4, 0, 0.2, 1) });
+      cardOpacity.value = withTiming(0, { duration: 500, easing: Easing.bezier(0.4, 0, 0.2, 1) });
+
+      setTimeout(() => {
+        onSave({ image, description });
+      }, 2000);
+    }
+  };
+
+  const titleAnimatedStyle = useAnimatedStyle(() => ({
+    opacity: isSaving ? withTiming(0, { duration: 600 }) : titleOpacity.value,
+    transform: [{ translateY: titleY.value }],
+  }));
+
+  const shadowAnimatedStyle = useAnimatedStyle(() => ({
+    left: shadowLeft.value,
+    top: shadowTop.value,
+    transform: [
+      { scale: shadowScale.value },
+      { rotate: `${shadowRotate.value}deg` },
+    ],
+    opacity: shadowOpacity.value,
+  }));
+
+  const photoAnimatedStyle = useAnimatedStyle(() => ({
+    left: photoLeft.value,
+    top: photoTop.value,
+    transform: [
+      { scale: photoScale.value },
+      { rotate: `${photoRotate.value}deg` },
+    ],
+    opacity: photoOpacity.value,
+  }));
+
+  const cardAnimatedStyle = useAnimatedStyle(() => ({
+    bottom: isExpanded ? 50 : cardBottom.value,
+    transform: [{ translateY: cardTranslateY.value }],
+    opacity: cardOpacity.value,
+  }));
+
+  const textAnimatedStyle = useAnimatedStyle(() => ({
+    opacity: textOpacity.value,
+  }));
+
+  const panGesture = Gesture.Pan()
+    .onEnd((event) => {
+      if (event.translationY > 150) {
+        runOnJS(setIsExpanded)(false);
+      } else if (event.translationY < -50) {
+        runOnJS(setIsExpanded)(true);
+      }
+    });
+
+  return (
+    <View style={styles.container}>
+      {/* Title */}
+      <Animated.Text style={[styles.title, titleAnimatedStyle]}>
+        LifeNote · Day {currentDay}
+      </Animated.Text>
+
+      {/* Photo frame background shadow */}
+      <Animated.View style={[styles.shadowContainer, shadowAnimatedStyle]}>
+        <View style={styles.shadowBox} />
+      </Animated.View>
+
+      {/* Photo frame with upload */}
+      <Animated.View style={[styles.photoContainer, photoAnimatedStyle]}>
+        <TouchableOpacity 
+          style={styles.photoFrame}
+          onPress={handleImageUpload}
+          disabled={isSaving}
+          activeOpacity={0.9}
+        >
+          {image ? (
+            <Image source={{ uri: image }} style={styles.uploadedImage} />
+          ) : (
+            <View style={styles.uploadPlaceholder}>
+              <Text style={styles.uploadText}>Tap to add photo</Text>
+            </View>
+          )}
+        </TouchableOpacity>
+      </Animated.View>
+
+      {/* Note input card */}
+      <GestureDetector gesture={panGesture}>
+        <Animated.View style={[styles.cardContainer, cardAnimatedStyle]}>
+          <TouchableOpacity 
+            style={styles.card}
+            activeOpacity={1}
+            onPress={() => !isSaving && setIsExpanded(!isExpanded)}
+          >
+            <Animated.View style={[styles.cardContent, textAnimatedStyle]}>
+              <Text style={styles.cardTitle}>Add a note to your memory</Text>
+            </Animated.View>
+
+            <LinesSVG />
+
+            <Animated.View style={[styles.textAreaContainer, textAnimatedStyle]}>
+              <TextInput
+                value={description}
+                onChangeText={setDescription}
+                placeholder="What happened today?"
+                placeholderTextColor="rgba(90, 74, 53, 0.3)"
+                multiline
+                style={styles.textArea}
+                editable={!isSaving}
+                onFocus={() => setIsExpanded(true)}
+              />
+            </Animated.View>
+
+            {/* Action buttons */}
+            {!isSaving && (
+              <View style={styles.buttonContainer}>
+                <TouchableOpacity
+                  onPress={onCancel}
+                  style={styles.cancelButton}
+                  activeOpacity={0.7}
+                >
+                  <Text style={styles.cancelButtonText}>Cancel</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={handleSave}
+                  disabled={!image && !description}
+                  style={[
+                    styles.saveButton,
+                    (!image && !description) && styles.saveButtonDisabled
+                  ]}
+                  activeOpacity={0.8}
+                >
+                  <Text style={styles.saveButtonText}>Save</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+          </TouchableOpacity>
+        </Animated.View>
+      </GestureDetector>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#f2ede7',
+    overflow: 'hidden',
+  },
+  title: {
+    position: 'absolute',
+    top: 72,
+    left: 0,
+    right: 0,
+    fontFamily: 'DMMono-Regular',
+    fontSize: 14,
+    color: '#5a4a35',
+    textAlign: 'center',
+    zIndex: 20,
+  },
+  shadowContainer: {
+    position: 'absolute',
+    width: 329.774,
+    height: 357.848,
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 0,
+  },
+  shadowBox: {
+    backgroundColor: '#e6dfd6',
+    height: 348,
+    width: 319,
+    borderRadius: 32,
+  },
+  photoContainer: {
+    position: 'absolute',
+    width: 347.765,
+    height: 374.162,
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 10,
+  },
+  photoFrame: {
+    backgroundColor: 'white',
+    borderWidth: 8,
+    borderColor: '#f8f7f4',
+    height: 348,
+    width: 319,
+    borderRadius: 32,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: -2, height: -2 },
+    shadowOpacity: 0.12,
+    shadowRadius: 20,
+    elevation: 5,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  uploadedImage: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    resizeMode: 'cover',
+  },
+  uploadPlaceholder: {
+    padding: 24,
+  },
+  uploadText: {
+    fontFamily: 'DMMono-Regular',
+    fontSize: 12,
+    color: '#5a4a35',
+    textAlign: 'center',
+  },
+  cardContainer: {
+    position: 'absolute',
+    left: SCREEN_WIDTH / 2 - 184.9145,
+    width: 369.829,
+    height: 401.879,
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 10,
+  },
+  card: {
+    backgroundColor: 'rgba(255, 255, 255, 0.8)',
+    width: 369,
+    borderRadius: 32,
+    padding: 40,
+    paddingHorizontal: 30,
+  },
+  cardContent: {
+    minWidth: '100%',
+  },
+  cardTitle: {
+    fontFamily: 'DMMono-Regular',
+    fontSize: 14,
+    color: '#2f1f0a',
+  },
+  textAreaContainer: {
+    position: 'absolute',
+    top: 85.85,
+    left: 29.66,
+    width: 309.579,
+    height: 280.639,
+  },
+  textArea: {
+    fontFamily: 'Handlee-Regular',
+    fontSize: 14,
+    color: '#5a4a35',
+    width: 309,
+    height: 280,
+    lineHeight: 39.76,
+    textAlignVertical: 'top',
+  },
+  buttonContainer: {
+    flexDirection: 'row',
+    gap: 12,
+    justifyContent: 'flex-end',
+    width: '100%',
+    marginTop: 16,
+  },
+  cancelButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 8,
+  },
+  cancelButtonText: {
+    fontFamily: 'DMMono-Regular',
+    fontSize: 12,
+    color: '#5a4a35',
+  },
+  saveButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 8,
+    backgroundColor: '#5a4a35',
+  },
+  saveButtonDisabled: {
+    opacity: 0.3,
+  },
+  saveButtonText: {
+    fontFamily: 'DMMono-Regular',
+    fontSize: 12,
+    color: 'white',
+  },
+});

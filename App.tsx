@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { View, StyleSheet } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Note } from './src/app/types';
-import CalendarView from './src/app/components/CalendarView.native';
-import NewNoteView from './src/app/components/NewNoteView.native';
-import ViewNote from './src/app/components/ViewNote.native';
+import { Note } from './components/types';
+import CalendarView from './components/CalendarView.native';
+import NewNoteView from './components/NewNoteView.native';
+import ViewNote from './components/ViewNote.native';
 import { useFonts } from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
