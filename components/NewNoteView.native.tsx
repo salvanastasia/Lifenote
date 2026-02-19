@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Dimensions, Image, Alert } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, TouchableWithoutFeedback, StyleSheet, Dimensions, Image, Alert, Keyboard } from 'react-native';
 import { Note } from './types';
 import Animated, {
   useSharedValue,
@@ -136,6 +136,7 @@ export default function NewNoteView({ currentDay, onSave, onCancel }: NewNoteVie
   };
 
   const handleSave = () => {
+    Keyboard.dismiss();
     if (image || description) {
       setIsSaving(true);
 
@@ -354,6 +355,7 @@ export default function NewNoteView({ currentDay, onSave, onCancel }: NewNoteVie
     });
 
   return (
+    <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
     <View style={styles.container}>
       {/* Title */}
       <Animated.Text style={[styles.title, titleAnimatedStyle]}>
@@ -438,6 +440,7 @@ export default function NewNoteView({ currentDay, onSave, onCancel }: NewNoteVie
         </Animated.View>
       </GestureDetector>
     </View>
+    </TouchableWithoutFeedback>
   );
 }
 
@@ -552,10 +555,10 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#5a4a35',
     position: 'absolute',
-    top: -12,
+    top: -26,
     left: 0,
     right: 0,
-    height: '100%',
+    bottom: 0,
     lineHeight: 40.64,
     textAlignVertical: 'top',
     paddingTop: 0,

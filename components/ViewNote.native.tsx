@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Dimensions, Image } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, TouchableWithoutFeedback, StyleSheet, Dimensions, Image, Keyboard } from 'react-native';
 import { Note } from './types';
 import Animated, {
   useSharedValue,
@@ -108,6 +108,7 @@ export default function ViewNote({ note, onBack, isEditable = false, onUpdate }:
   };
 
   const handleSave = () => {
+    Keyboard.dismiss();
     if (onUpdate) {
       onUpdate({
         ...note,
@@ -119,6 +120,7 @@ export default function ViewNote({ note, onBack, isEditable = false, onUpdate }:
   };
 
   const handleCancel = () => {
+    Keyboard.dismiss();
     setImage(note.image);
     setDescription(note.description);
     setIsEditing(false);
@@ -174,6 +176,7 @@ export default function ViewNote({ note, onBack, isEditable = false, onUpdate }:
     });
 
   return (
+    <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
     <View style={styles.container}>
       <TouchableOpacity
         onPress={onBack}
@@ -270,6 +273,7 @@ export default function ViewNote({ note, onBack, isEditable = false, onUpdate }:
         </Animated.View>
       </GestureDetector>
     </View>
+    </TouchableWithoutFeedback>
   );
 }
 
@@ -281,12 +285,13 @@ const styles = StyleSheet.create({
   },
   backButton: {
     position: 'absolute',
-    top: 24,
+    top: 72,
     left: 24,
     zIndex: 30,
     paddingHorizontal: 12,
-    paddingVertical: 8,
+    paddingVertical: 0,
     borderRadius: 8,
+    justifyContent: 'center',
   },
   backButtonText: {
     fontFamily: 'DMMono-Regular',
@@ -392,10 +397,10 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#5a4a35',
     position: 'absolute',
-    top: -12,
+    top: -26,
     left: 0,
     right: 0,
-    height: '100%',
+    bottom: 0,
     lineHeight: 40.64,
     textAlignVertical: 'top',
     paddingTop: 0,
@@ -406,7 +411,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#5a4a35',
     position: 'absolute',
-    top: -12,
+    top: -26,
     left: 0,
     right: 0,
     lineHeight: 40.64,
