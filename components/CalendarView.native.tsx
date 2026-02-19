@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, Image, StyleSheet } from 'react-native';
 import Animated, { useSharedValue, useAnimatedStyle, withTiming, Easing } from 'react-native-reanimated';
 import { Note } from './types';
@@ -6,7 +6,7 @@ import { Note } from './types';
 interface CalendarViewProps {
   notes: Note[];
   currentDay: number;
-  onDayClick: (day: number) => void;
+  onDayClick: (day: number, scrollY: number) => void;
 }
 
 interface DayThumbnailProps {
@@ -50,6 +50,8 @@ function DayThumbnail({ note, onClick }: DayThumbnailProps) {
 }
 
 export default function CalendarView({ notes, currentDay, onDayClick }: CalendarViewProps) {
+  const scrollYRef = useRef(0);
+
   // Fade in animation
   const opacity = useSharedValue(0);
 
@@ -86,6 +88,8 @@ export default function CalendarView({ notes, currentDay, onDayClick }: Calendar
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
+        onScroll={(e) => { scrollYRef.current = e.nativeEvent.contentOffset.y; }}
+        scrollEventThrottle={16}
       >
         {Array.from({ length: rows }).map((_, rowIndex) => (
           <View key={rowIndex} style={styles.row}>
@@ -101,7 +105,7 @@ export default function CalendarView({ notes, currentDay, onDayClick }: Calendar
                 <View key={dayNumber} style={styles.dayContainer}>
                   <DayThumbnail
                     note={note}
-                    onClick={() => onDayClick(dayNumber)}
+                    onClick={() => onDayClick(dayNumber, scrollYRef.current)}
                   />
                   {isToday && (
                     <View style={styles.todayIndicator} />

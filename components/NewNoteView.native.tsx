@@ -161,6 +161,10 @@ export default function NewNoteView({ currentDay, onSave, onCancel }: NewNoteVie
       titleBlur.value = withTiming(10, { duration: 600, easing: Easing.bezier(0.4, 0, 0.2, 1) });
 
       // Step 2: Animate photos to center with spring
+      // BorderRadius: progressive across full animation span (800ms phase1 + 200ms gap + 1200ms phase2 = 2200ms)
+      shadowBorderRadius.value = withTiming(10, { duration: 2200, easing: Easing.bezier(0.4, 0, 0.2, 1) });
+      photoBorderRadius.value  = withTiming(10, { duration: 2200, easing: Easing.bezier(0.4, 0, 0.2, 1) });
+
       shadowLeft.value = withTiming(SCREEN_WIDTH / 2 - 159.887, { 
         duration: 800, 
         easing: Easing.bezier(0.34, 1.56, 0.64, 1) 
@@ -246,10 +250,6 @@ export default function NewNoteView({ currentDay, onSave, onCancel }: NewNoteVie
           duration: 1200, 
           easing: Easing.bezier(0.4, 0, 0.2, 1) 
         });
-        shadowBorderRadius.value = withTiming(10, { 
-          duration: 1200, 
-          easing: Easing.bezier(0.4, 0, 0.2, 1) 
-        });
 
         photoLeft.value = withTiming(photoTargetLeft, { 
           duration: 1200, 
@@ -269,10 +269,6 @@ export default function NewNoteView({ currentDay, onSave, onCancel }: NewNoteVie
           }
         });
         photoRotate.value = withTiming(3, { 
-          duration: 1200, 
-          easing: Easing.bezier(0.4, 0, 0.2, 1) 
-        });
-        photoBorderRadius.value = withTiming(10, { 
           duration: 1200, 
           easing: Easing.bezier(0.4, 0, 0.2, 1) 
         });

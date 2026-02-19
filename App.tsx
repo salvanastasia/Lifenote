@@ -34,6 +34,7 @@ export default function App() {
   const [selectedNote, setSelectedNote] = useState<Note | null>(null);
   const [currentDay, setCurrentDay] = useState<number>(1);
   const [appIsReady, setAppIsReady] = useState(false);
+  const [calendarScrollY, setCalendarScrollY] = useState(0);
 
   // ============ DEMO MODE - REMOVE LATER ============
   const DEMO_MODE = true;
@@ -149,9 +150,10 @@ export default function App() {
     setViewMode('calendar');
   };
 
-  const handleDayClick = (day: number) => {
+  const handleDayClick = (day: number, scrollY: number) => {
     const note = notes.find(n => n.day === day);
     if (note) {
+      setCalendarScrollY(scrollY);
       setSelectedNote(note);
       setViewMode('view-note');
     } else {
@@ -211,6 +213,7 @@ export default function App() {
             onBack={handleBackToCalendar}
             onUpdate={handleUpdateNote}
             isEditable={isNoteEditable(selectedNote)}
+            thumbnailScrollY={calendarScrollY}
           />
         )}
       </View>
