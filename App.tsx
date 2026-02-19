@@ -37,7 +37,7 @@ export default function App() {
   const [calendarScrollY, setCalendarScrollY] = useState(0);
 
   // ============ DEMO MODE - REMOVE LATER ============
-  const DEMO_MODE = true;
+  const DEMO_MODE = false; // Use local storage (AsyncStorage) to persist notes
   // ============ END DEMO MODE ============
 
   const [fontsLoaded] = useFonts({
@@ -107,25 +107,16 @@ export default function App() {
     prepare();
   }, []);
 
-  // Save notes to AsyncStorage whenever they change
+  // Save notes to AsyncStorage whenever they change (local storage on device)
   useEffect(() => {
     async function saveNotes() {
-      // ============ DEMO MODE - REMOVE LATER ============
-      if (DEMO_MODE) {
-        // Don't persist to AsyncStorage in demo mode
-        return;
-      }
-      // ============ END DEMO MODE ============
-      
-      if (notes.length > 0) {
-        try {
-          await AsyncStorage.setItem('lifenote-notes', JSON.stringify(notes));
-        } catch (e) {
-          console.error('Failed to save notes to AsyncStorage', e);
-        }
+      if (DEMO_MODE) return;
+      try {
+        await AsyncStorage.setItem('lifenote-notes', JSON.stringify(notes));
+      } catch (e) {
+        console.error('Failed to save notes to AsyncStorage', e);
       }
     }
-
     saveNotes();
   }, [notes]);
 
