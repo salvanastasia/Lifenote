@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, TouchableWithoutFeedback, StyleSheet, Dimensions, Image, Alert, Keyboard } from 'react-native';
 import { Note } from './types';
 import Animated, {
@@ -77,6 +77,34 @@ export default function NewNoteView({ currentDay, onSave, onCancel }: NewNoteVie
 
   const textOpacity = useSharedValue(0);
   const textBlur = useSharedValue(10);
+
+  // When keyboard opens, move note card up so it sits flush above the keyboard
+  useEffect(() => {
+    const onShow = (e: { endCoordinates: { height: number }; duration?: number }) => {
+      cancelAnimation(cardBottom);
+      cardBottom.value = withTiming(e.endCoordinates.height, {
+        duration: e.duration ?? 300,
+        easing: Easing.bezier(0.4, 0, 0.2, 1),
+      });
+    };
+    const onHide = () => {
+      cancelAnimation(cardBottom);
+      cardBottom.value = withTiming(50, {
+        duration: 300,
+        easing: Easing.bezier(0.4, 0, 0.2, 1),
+      });
+    };
+    const sub1 = Keyboard.addListener('keyboardWillShow', onShow);
+    const sub2 = Keyboard.addListener('keyboardDidShow', onShow);
+    const sub3 = Keyboard.addListener('keyboardWillHide', onHide);
+    const sub4 = Keyboard.addListener('keyboardDidHide', onHide);
+    return () => {
+      sub1.remove();
+      sub2.remove();
+      sub3.remove();
+      sub4.remove();
+    };
+  }, []);
 
   // Start entrance animations
   React.useEffect(() => {
