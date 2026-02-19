@@ -15,13 +15,17 @@
     ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.lifenote.app"
+      "bundleIdentifier": "com.lifenote.app",
+      "runtimeVersion": "1.0.0"
     },
     "android": {
       "adaptiveIcon": {
         "backgroundColor": "#f2ede7"
       },
-      "package": "com.lifenote.app"
+      "package": "com.lifenote.app",
+      "runtimeVersion": {
+        "policy": "appVersion"
+      }
     },
     "web": {},
     "plugins": [
@@ -35,6 +39,14 @@
         }
       ],
       "expo-asset"
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "f3372275-8fd7-4dc5-aacc-b2052c5d3da7"
+      }
+    },
+    "updates": {
+      "url": "https://u.expo.dev/f3372275-8fd7-4dc5-aacc-b2052c5d3da7"
+    }
   }
 }
