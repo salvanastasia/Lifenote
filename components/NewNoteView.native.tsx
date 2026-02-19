@@ -7,13 +7,12 @@ import Animated, {
   withTiming,
   withRepeat,
   withSequence,
+  cancelAnimation,
   Easing,
   runOnJS,
 } from 'react-native-reanimated';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import * as ImagePicker from 'expo-image-picker';
-import Svg, { Line, G } from 'react-native-svg';
-
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 interface NewNoteViewProps {
@@ -22,26 +21,26 @@ interface NewNoteViewProps {
   onCancel: () => void;
 }
 
-function LinesSVG() {
+const NOTEBOOK_LINE_HEIGHT = 40.64;
+const NOTEBOOK_CONTAINER_HEIGHT = 244.476;
+const NOTEBOOK_LINE_COUNT = Math.round(NOTEBOOK_CONTAINER_HEIGHT / NOTEBOOK_LINE_HEIGHT);
+
+function NotebookLines() {
   return (
-    <View style={{ height: 244.476, width: '100%', position: 'relative' }}>
-      <Svg
-        width="100%"
-        height="100%"
-        viewBox="0 0 309.001 245.476"
-        fill="none"
-        preserveAspectRatio="none"
-      >
-        <G>
-          <Line x1="0.00106109" y1="0.499999" x2="309" y2="1.13947" stroke="#A4947F" strokeOpacity="0.3" />
-          <Line x1="0.00106109" y1="41.1395" x2="309" y2="41.7789" stroke="#A4947F" strokeOpacity="0.3" />
-          <Line x1="0.00106109" y1="81.7789" x2="309" y2="82.4184" stroke="#A4947F" strokeOpacity="0.3" />
-          <Line x1="0.00106109" y1="122.418" x2="309" y2="123.058" stroke="#A4947F" strokeOpacity="0.3" />
-          <Line x1="0.00106109" y1="163.058" x2="309" y2="163.697" stroke="#A4947F" strokeOpacity="0.3" />
-          <Line x1="0.00106109" y1="203.697" x2="309" y2="204.337" stroke="#A4947F" strokeOpacity="0.3" />
-          <Line x1="0.00106109" y1="244.337" x2="309" y2="244.976" stroke="#A4947F" strokeOpacity="0.3" />
-        </G>
-      </Svg>
+    <View style={{ height: NOTEBOOK_CONTAINER_HEIGHT, width: '100%', position: 'relative' }} pointerEvents="none">
+      {Array.from({ length: NOTEBOOK_LINE_COUNT }, (_, i) => (
+        <View
+          key={i}
+          style={{
+            position: 'absolute',
+            left: 0,
+            right: 0,
+            top: i * NOTEBOOK_LINE_HEIGHT,
+            height: StyleSheet.hairlineWidth,
+            backgroundColor: 'rgba(164, 148, 127, 0.3)',
+          }}
+        />
+      ))}
     </View>
   );
 }
@@ -281,6 +280,18 @@ export default function NewNoteView({ currentDay, onSave, onCancel }: NewNoteVie
     }
   };
 
+  const expand = () => {
+    cancelAnimation(cardBottom);
+    cardBottom.value = withTiming(50, { duration: 500, easing: Easing.bezier(0.4, 0, 0.2, 1) });
+    setIsExpanded(true);
+  };
+
+  const collapse = () => {
+    cancelAnimation(cardBottom);
+    cardBottom.value = withTiming(-195, { duration: 400, easing: Easing.bezier(0.4, 0, 0.2, 1) });
+    setIsExpanded(false);
+  };
+
   const titleAnimatedStyle = useAnimatedStyle(() => ({
     opacity: isSaving ? withTiming(0, { duration: 600 }) : titleOpacity.value,
     transform: [{ translateY: titleY.value }],
@@ -307,7 +318,7 @@ export default function NewNoteView({ currentDay, onSave, onCancel }: NewNoteVie
   }));
 
   const cardAnimatedStyle = useAnimatedStyle(() => ({
-    bottom: isExpanded ? 50 : cardBottom.value,
+    bottom: cardBottom.value,
     transform: [
       { translateY: cardTranslateY.value + dragTranslateY.value }
     ],
@@ -332,25 +343,14 @@ export default function NewNoteView({ currentDay, onSave, onCancel }: NewNoteVie
       dragTranslateY.value = event.translationY;
     })
     .onEnd((event) => {
-      // Smooth spring animation back to position
+      dragTranslateY.value = withTiming(0, {
+        duration: 300,
+        easing: Easing.bezier(0.25, 0.1, 0.25, 1),
+      });
       if (event.translationY > 150) {
-        dragTranslateY.value = withTiming(0, { 
-          duration: 300, 
-          easing: Easing.bezier(0.25, 0.1, 0.25, 1) 
-        });
-        runOnJS(setIsExpanded)(false);
+        runOnJS(collapse)();
       } else if (event.translationY < -50) {
-        dragTranslateY.value = withTiming(0, { 
-          duration: 300, 
-          easing: Easing.bezier(0.25, 0.1, 0.25, 1) 
-        });
-        runOnJS(setIsExpanded)(true);
-      } else {
-        // Spring back to original position
-        dragTranslateY.value = withTiming(0, { 
-          duration: 300, 
-          easing: Easing.bezier(0.25, 0.1, 0.25, 1) 
-        });
+        runOnJS(expand)();
       }
     });
 
@@ -393,13 +393,13 @@ export default function NewNoteView({ currentDay, onSave, onCancel }: NewNoteVie
           <TouchableOpacity 
             style={styles.card}
             activeOpacity={1}
-            onPress={() => !isSaving && setIsExpanded(!isExpanded)}
+            onPress={() => !isSaving && (isExpanded ? collapse() : expand())}
           >
             <Animated.View style={[styles.cardContent, textAnimatedStyle]}>
               <Text style={styles.cardTitle}>Add a note to your memory</Text>
               
               <View style={styles.linesContainer}>
-                <LinesSVG />
+                <NotebookLines />
                 <TextInput
                   value={description}
                   onChangeText={setDescription}
@@ -408,7 +408,7 @@ export default function NewNoteView({ currentDay, onSave, onCancel }: NewNoteVie
                   multiline
                   style={styles.textArea}
                   editable={!isSaving}
-                  onFocus={() => setIsExpanded(true)}
+                  onFocus={() => expand()}
                 />
               </View>
             </Animated.View>
@@ -548,7 +548,7 @@ const styles = StyleSheet.create({
   linesContainer: {
     position: 'relative',
     width: '100%',
-    height: 244.476,
+    height: NOTEBOOK_CONTAINER_HEIGHT,
   },
   textArea: {
     fontFamily: 'Handlee-Regular',
